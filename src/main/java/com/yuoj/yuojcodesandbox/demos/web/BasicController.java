@@ -16,7 +16,6 @@
 
 package com.yuoj.yuojcodesandbox.demos.web;
 
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -28,6 +27,7 @@ public class BasicController {
     // http://127.0.0.1:8090/hello?name=lisi
     @RequestMapping("/hello")
     public String hello(@RequestParam(name = "name", defaultValue = "unknown user") String name) {
+        System.out.println("jjj");
         return "Hello " + name;
     }
     
