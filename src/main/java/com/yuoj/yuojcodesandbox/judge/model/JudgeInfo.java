@@ -8,6 +8,7 @@ public class JudgeInfo {
      * 程序执行信息
      */
     private String message;
+    
     /**
      * 执行时间
      */

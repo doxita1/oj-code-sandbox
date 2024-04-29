@@ -13,6 +13,7 @@ import com.yuoj.yuojcodesandbox.judge.model.JudgeInfo;
 import com.yuoj.yuojcodesandbox.security.DefaultSecurityManager;
 import com.yuoj.yuojcodesandbox.utils.ProcessUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.io.BufferedReader;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Slf4j
+@Component
 public class JavaNativeCodeSandBox implements CodeSandBox {
     
     public static final String GLOBAL_FILE_NAME = "tempCode";
@@ -33,7 +35,7 @@ public class JavaNativeCodeSandBox implements CodeSandBox {
     
     public static final Long RUN_TIME_LIMIT = 1000 * 3L;
     
-    public static final List<String> BLACK_LIST = Arrays.asList("exec","file");
+    public static final List<String> BLACK_LIST = Arrays.asList("exec", "file");
     
     public static final WordTree WORD_TREE;
     
@@ -48,7 +50,7 @@ public class JavaNativeCodeSandBox implements CodeSandBox {
         ExecuteCodeRequest executeCodeRequest = new ExecuteCodeRequest();
         
         System.setSecurityManager(new DefaultSecurityManager());
-        
+
 //        String code = FileUtil.readString(FileUtil.newFile("D:\\yupi-oj\\yuoj-code-sandbox\\src\\main\\resources\\testJavaCode\\simpleAdd.java"), CharsetUtil.CHARSET_UTF_8);
         String code = FileUtil.readString(FileUtil.newFile("D:\\yupi-oj\\yuoj-code-sandbox\\src\\main\\resources\\errorstatus\\TimeOutOfLimit.java"), CharsetUtil.CHARSET_UTF_8);
 //        String code = FileUtil.readString(FileUtil.newFile("D:\\yupi-oj\\yuoj-code-sandbox\\src\\main\\resources\\errorstatus\\OutOfMemory.java"),CharsetUtil.CHARSET_UTF_8);
@@ -56,8 +58,8 @@ public class JavaNativeCodeSandBox implements CodeSandBox {
         
         // 匹配违禁词
         FoundWord foundWord = WORD_TREE.matchWord(code);
-        if (foundWord!=null) {
-            System.out.println("有违禁词:"+foundWord.getFoundWord());
+        if (foundWord != null) {
+            System.out.println("有违禁词:" + foundWord.getFoundWord());
         }
         
         executeCodeRequest.setLanguage("java");
@@ -86,9 +88,7 @@ public class JavaNativeCodeSandBox implements CodeSandBox {
         
         String userCodeParentPath = tempCodePath + FileUtil.FILE_SEPARATOR + UUID.randomUUID();
         String userCodePath = userCodeParentPath + FileUtil.FILE_SEPARATOR + GLOBAL_JAVA_CLASS_NAME;
-        String securityPath = "D:\\yupi-oj\\yuoj-code-sandbox\\src\\main\\resources\\security\\DefaultSecurityManager.java";
         File userCodeFile = FileUtil.writeString(code, userCodePath, CharsetUtil.CHARSET_UTF_8);
-        
         
         
         //2.编译代码,得到class文件
@@ -167,7 +167,6 @@ public class JavaNativeCodeSandBox implements CodeSandBox {
         }
         
         //6.错误处理,提升程序健壮性
-        
         return executeCodeResponse;
     }
     
