@@ -20,4 +20,6 @@ public class ExecuteMessage {
      * 消耗时间
      */
     private Long time;
+    
+    private Long memory;
 }

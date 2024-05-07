@@ -1,15 +1,15 @@
 package com.yuoj.yuojcodesandbox.utils;
 
-import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.date.StopWatch;
 import com.yuoj.yuojcodesandbox.judge.model.ExecuteMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+
 
 @Slf4j
 public class ProcessUtils {
@@ -19,6 +19,8 @@ public class ProcessUtils {
      * @param type 进程类别
      * @return
      */
+    public static final StopWatch stopWatch = new StopWatch();
+    public static final long RUN_TIME_LIMIT = 3 * 1000L;
     
     public static ExecuteMessage runProcessResult(Process execProcess,String type) {
         ExecuteMessage executeMessage = new ExecuteMessage();
@@ -31,7 +33,8 @@ public class ProcessUtils {
             if (exitCode == 0) {
                 log.info("{}成功", type);
                 System.out.println(String.format("%s成功", type));
-                String compileReadLine;List<String> compileStringList = new ArrayList<>();
+                String compileReadLine;
+                List<String> compileStringList = new ArrayList<>();
                 while ((compileReadLine = bufferedReader.readLine()) != null) {
                     compileStringList.add(compileReadLine);
                 }
@@ -44,8 +47,8 @@ public class ProcessUtils {
                 while ((compileReadLine = bufferedReader.readLine()) != null) {
                     compileStringList.add(compileReadLine);
                 }
-                
                 executeMessage.setSucceedMessage(StringUtils.join(compileStringList,"\n"));
+                
                 BufferedReader bufferedReaderError = new BufferedReader
                         (new InputStreamReader(execProcess.getErrorStream()));
                 String errorCompileReadLine;
@@ -63,4 +66,69 @@ public class ProcessUtils {
         
         return executeMessage;
     }
+    
+    public static List<ExecuteMessage> executeCppCode(List<String> inputList, String executablePath) {
+        List<ExecuteMessage> executeMessageList = new ArrayList<>();
+        for (String input : inputList) {
+            ProcessBuilder pb = new ProcessBuilder(executablePath.split(" "));
+            pb.redirectErrorStream(true); // 将错误输出和标准输出合并
+            ExecuteMessage executeMessage = new ExecuteMessage();
+            try {
+                Process process = pb.start();
+                // 通过标准输入流写入输入数据
+                try {
+                    stopWatch.start();
+                    // 超时控制, 开启子线程来计时
+                    new Thread(() -> {
+                        try {
+                            Thread.sleep(RUN_TIME_LIMIT);
+                            if (process.isAlive()) {
+                                System.out.println("run time out of limit");
+                                process.destroy();
+                            }
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }).start();
+                    try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()))) {
+                        writer.write(input.replace(" ", "\n"));
+                    }
+                    
+                    // 读取标准输出
+                    List<String> outputLines = readLines(process.getInputStream());
+                    outputLines.forEach(System.out::println); // 或其他逻辑处理
+                    executeMessage.setSucceedMessage(String.join("", outputLines));
+                    
+                    // 读取错误输出
+                    List<String> errorLines = readLines(process.getErrorStream());
+                    errorLines.forEach(System.err::println); // 或其他逻辑处理
+                    executeMessage.setErrorMessage(String.join("", errorLines));
+                    
+                    int exitCode = process.waitFor();
+                    executeMessage.setExitCode(exitCode);
+                    stopWatch.stop();
+                    // 得到运行时间
+                    executeMessage.setTime(stopWatch.getLastTaskTimeMillis());
+                    executeMessageList.add(executeMessage);
+                } catch (IOException | InterruptedException e) {
+                    e.printStackTrace();
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return executeMessageList;
+    }
+    
+    private static List<String> readLines(InputStream inputStream) throws IOException {
+        List<String> lines = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                lines.add(line);
+            }
+        }
+        return lines;
+    }
+    
 }

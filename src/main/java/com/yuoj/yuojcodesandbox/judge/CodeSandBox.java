@@ -8,5 +8,5 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 @Component
 public interface CodeSandBox {
-    ExecuteCodeResponse executeCode(ExecuteCodeRequest executeCodeRequest) throws IOException, InterruptedException;
+    ExecuteCodeResponse executeCode(ExecuteCodeRequest executeCodeRequest);
 }
